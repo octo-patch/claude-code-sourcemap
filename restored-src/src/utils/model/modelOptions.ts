@@ -6,6 +6,7 @@ import {
   isTeamPremiumSubscriber,
 } from '../auth.js'
 import { getModelStrings } from './modelStrings.js'
+import { MINIMAX_MODEL_IDS } from './configs.js'
 import {
   COST_TIER_3_15,
   COST_HAIKU_35,
@@ -51,6 +52,18 @@ export function getDefaultOptionForUser(fastMode = false): ModelOption {
       value: null,
       label: 'Default (recommended)',
       description: `Use the default model for Ants (currently ${currentModel})`,
+      descriptionForModel: `Default model (currently ${currentModel})`,
+    }
+  }
+
+  if (getAPIProvider() === 'minimax') {
+    const currentModel = renderDefaultModelSetting(
+      getDefaultMainLoopModelSetting(),
+    )
+    return {
+      value: null,
+      label: 'Default (recommended)',
+      description: `Use the default model (currently ${currentModel})`,
       descriptionForModel: `Default model (currently ${currentModel})`,
     }
   }
@@ -284,6 +297,17 @@ function getModelOptionsBase(fastMode = false): ModelOption[] {
       getSonnet46Option(),
       getSonnet46_1MOption(),
       getHaiku45Option(),
+    ]
+  }
+
+  if (getAPIProvider() === 'minimax') {
+    return [
+      getDefaultOptionForUser(fastMode),
+      ...MINIMAX_MODEL_IDS.map(model => ({
+        value: model,
+        label: model,
+        description: model,
+      })),
     ]
   }
 
