@@ -8,6 +8,25 @@ import { getModelCapability } from './model/modelCapabilities.js'
 // Model context window size (200k tokens for all models right now)
 export const MODEL_CONTEXT_WINDOW_DEFAULT = 200_000
 
+// MiniMax models expose their own context windows, which differ from the
+// default window used above.
+const MINIMAX_MODEL_CONTEXT_WINDOWS: Readonly<Record<string, number>> = {
+  'minimax-m3': 1_000_000,
+  'minimax-m2.7': 204_800,
+}
+
+function getMiniMaxContextWindow(model: string): number | null {
+  const canonical = getCanonicalName(model)
+  for (const [modelId, contextWindow] of Object.entries(
+    MINIMAX_MODEL_CONTEXT_WINDOWS,
+  )) {
+    if (canonical.includes(modelId)) {
+      return contextWindow
+    }
+  }
+  return null
+}
+
 // Maximum output tokens for compact operations
 export const COMPACT_MAX_OUTPUT_TOKENS = 20_000
 
@@ -45,7 +64,11 @@ export function modelSupports1M(model: string): boolean {
     return false
   }
   const canonical = getCanonicalName(model)
-  return canonical.includes('claude-sonnet-4') || canonical.includes('opus-4-6')
+  return (
+    canonical.includes('claude-sonnet-4') ||
+    canonical.includes('opus-4-6') ||
+    canonical.includes('minimax-m3')
+  )
 }
 
 export function getContextWindowForModel(
@@ -69,6 +92,17 @@ export function getContextWindowForModel(
   // [1m] suffix — explicit client-side opt-in, respected over all detection
   if (has1mContext(model)) {
     return 1_000_000
+  }
+
+  const miniMaxWindow = getMiniMaxContextWindow(model)
+  if (miniMaxWindow !== null) {
+    if (
+      miniMaxWindow > MODEL_CONTEXT_WINDOW_DEFAULT &&
+      is1mContextDisabled()
+    ) {
+      return MODEL_CONTEXT_WINDOW_DEFAULT
+    }
+    return miniMaxWindow
   }
 
   const cap = getModelCapability(model)
