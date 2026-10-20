@@ -3,9 +3,9 @@ import type { APIProvider } from './providers.js'
 
 export type ModelConfig = Record<APIProvider, ModelName>
 
-export const MINIMAX_MODEL_IDS = ['MiniMax-M3', 'MiniMax-M2.7'] as const
+export const MINIMAX_MODEL_IDS = ['MiniMax-M3.1-Flash', 'MiniMax-M3'] as const
 export const MINIMAX_DEFAULT_MODEL = MINIMAX_MODEL_IDS[0]
-export const MINIMAX_FAST_MODEL = MINIMAX_MODEL_IDS[1]
+export const MINIMAX_FAST_MODEL = MINIMAX_DEFAULT_MODEL
 
 // @[MODEL LAUNCH]: Add a new CLAUDE_*_CONFIG constant here. Double check the correct model strings
 // here since the pattern may change.

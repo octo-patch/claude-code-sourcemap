@@ -502,6 +502,16 @@ export function getModelOptions(fastMode = false): ModelOption[] {
 
   // Append additional model options fetched during bootstrap
   for (const opt of getGlobalConfig().additionalModelOptionsCache ?? []) {
+    // Cached discovery must not reintroduce retired ordinary MiniMax choices.
+    // Explicit custom and saved selections are added separately below/above.
+    if (
+      getAPIProvider() === 'minimax' &&
+      typeof opt.value === 'string' &&
+      /^minimax-/i.test(opt.value) &&
+      !MINIMAX_MODEL_IDS.some(model => model.toLowerCase() === opt.value?.toLowerCase())
+    ) {
+      continue
+    }
     if (!options.some(existing => existing.value === opt.value)) {
       options.push(opt)
     }
