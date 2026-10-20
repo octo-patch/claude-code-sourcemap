@@ -11,20 +11,16 @@ export const MODEL_CONTEXT_WINDOW_DEFAULT = 200_000
 // MiniMax models expose their own context windows, which differ from the
 // default window used above.
 const MINIMAX_MODEL_CONTEXT_WINDOWS: Readonly<Record<string, number>> = {
+  'minimax-m3.1-flash': 1_000_000,
   'minimax-m3': 1_000_000,
   'minimax-m2.7': 204_800,
 }
 
 function getMiniMaxContextWindow(model: string): number | null {
-  const canonical = getCanonicalName(model)
-  for (const [modelId, contextWindow] of Object.entries(
-    MINIMAX_MODEL_CONTEXT_WINDOWS,
-  )) {
-    if (canonical.includes(modelId)) {
-      return contextWindow
-    }
-  }
-  return null
+  // Match direct IDs exactly; custom deployments containing a model name may
+  // have a different context limit. Preserve the explicit [1m] suffix handling.
+  const canonical = model.toLowerCase().replace(/\[1m\]$/, '')
+  return MINIMAX_MODEL_CONTEXT_WINDOWS[canonical] ?? null
 }
 
 // Maximum output tokens for compact operations
@@ -67,7 +63,7 @@ export function modelSupports1M(model: string): boolean {
   return (
     canonical.includes('claude-sonnet-4') ||
     canonical.includes('opus-4-6') ||
-    canonical.includes('minimax-m3')
+    getMiniMaxContextWindow(model) === 1_000_000
   )
 }
 
@@ -184,6 +180,11 @@ export function getModelMaxOutputTokens(model: string): {
   default: number
   upperLimit: number
 } {
+  // Keep the conservative request default while allowing Flash's full limit.
+  if (model.toLowerCase().replace(/\[1m\]$/, '') === 'minimax-m3.1-flash') {
+    return { default: MAX_OUTPUT_TOKENS_DEFAULT, upperLimit: 524_288 }
+  }
+
   let defaultTokens: number
   let upperLimit: number
 
